@@ -3,6 +3,7 @@ import sys
 import json
 
 
+# python3 check_success.py <report_dir> <file_list.csv>
 def check_success(g, report_dir):
     for _, dirs, _ in os.walk(report_dir):
         for dir in dirs:
@@ -35,5 +36,5 @@ def check_success(g, report_dir):
 
 
 if __name__ == "__main__":
-    with open('file_list.csv', 'w') as g:
+    with open(sys.argv[2], 'w') as g:
         check_success(g, sys.argv[1])

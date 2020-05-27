@@ -1,8 +1,11 @@
 import os
 import sys
 import json
+import numpy as np
+import pandas as pd
 
 
+# python3 gen_per.py <report_dir> <file_list.csv> <per.csv>
 features = [
     "num_user_login",
     "num_total_running", "num_total_sleeping", "num_total_zombie", "num_total_stopped",
@@ -12,20 +15,38 @@ features = [
     "swap_total", "swap_used", "swap_free", "swap_cache"
 ]
 full_report_path = sys.argv[1]
-dst_path = 'syscall/'
-with open('file_list.csv', 'r') as f:
+with open(sys.argv[2], 'r') as f:
     flist = f.readlines()
 
-with open('perf.csv', 'w') as g:
-    for dir_ in flist:
-        report_path = full_report_path + dir_[:-1] + '/top.json'
-        vt = list()
-        with open(report_path, 'r') as f:
-            data = json.load(f)
+per = list()
+for dir_ in flist:
+    report_path = full_report_path + dir_[:-1] + '/top.json'
+    vt = list()
+    with open(report_path, 'r') as f:
+        data = json.load(f)
+    if len(data) <= 40:
         for step in data:
             for ft in features:
-                g.write(str(float(step[ft])) + ',')
-        g.write('\n')
+                vt.append(float(step[ft]))
+        while len(vt) < 40 * 21:
+            vt.append(0)
+    else:
+        d = len(data) // 40
+        for i, step in enumerate(data):
+            if i / d == 40:
+                    break
+            if i % d == 0:
+                for ft in features:
+                    vt.append(float(step[ft]))
+                
+
+    per.append(np.array(vt, dtype='Float32'))
+
+header = list()
+for i in range(40):
+    header.extend([ft + str(i) for ft in features])
+pd.DataFrame(per).to_csv(sys.argv[3], header=header, index=None)
+    
             
                     
             

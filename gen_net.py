@@ -3,12 +3,13 @@ import sys
 import pandas as pd
 
 
-# with open('file_list.csv', 'r') as f:
-#     flist = f.readlines()
-#     for dir_ in flist:
-#         dir_path = sys.argv[1] + dir_[:-1]
-#         p = subprocess.call('cd CICFlowMeter-4.0/bin/ && ./cfm ' +
-#                             dir_path + ' ../../net/' + dir_[:-1], shell=True)
+# python3 gen_net.py <report_dir> <file_list.csv> <net.csv>
+with open(sys.argv[2], 'r') as f:
+    flist = f.readlines()
+    for dir_ in flist:
+        dir_path = sys.argv[1] + dir_[:-1]
+        p = subprocess.call('cd CICFlowMeter-4.0/bin/ && ./cfm ' +
+                            dir_path + ' ../../net/' + dir_[:-1], shell=True)
 
 attributes = ['Sum ', 'Max ']
 features = ['Flow Duration', 'Tot Fwd Pkts', 'Tot Bwd Pkts',
@@ -26,7 +27,7 @@ headers.append('Label')
 data = dict()
 for header in headers:
     data[header] = list()
-with open('file_list.csv', 'r') as f:
+with open(sys.argv[2], 'r') as f:
     flist = f.readlines()
     for dir_ in flist:
         flow_path = 'net/' + dir_[:-1] + '/tcpdump.pcap_Flow.csv'
@@ -45,4 +46,4 @@ with open('file_list.csv', 'r') as f:
         data['Label'].append(0)
     
     dp = pd.DataFrame.from_dict(data)
-    dp.to_csv('net.csv', index=None, columns=headers)
+    dp.to_csv(sys.argv[3], index=None, columns=headers)
