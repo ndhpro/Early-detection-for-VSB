@@ -56,17 +56,26 @@ def report(names, y_true, y_pred):
 
 
 def prepare_data(args):
-    malware = pd.read_csv('data/net_malware.csv').values
-    mal_label = np.zeros((len(malware)))
-    benign = pd.read_csv('data/net_benign.csv').values
-    beg_label = np.ones((len(benign)))
-    X = np.vstack([malware, benign])
-    y = np.hstack([mal_label, beg_label])
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=args.seed, stratify=y)
-    
-    lsvc = LinearSVC(C=0.01, penalty="l1", dual=False,
-                     random_state=args.seed).fit(X_train, y_train)
+    malware = pd.read_csv('data/net_malware.csv')
+    benign = pd.read_csv('data/net_benign.csv')
+    data = pd.concat([malware, benign], ignore_index=True)
+    mal_list = pd.read_csv(
+        'list_malware.csv', header=None).values[:-1].reshape(-1)
+    beg_list = pd.read_csv(
+        'list_benign.csv', header=None).values[:-1].reshape(-1)
+
+    X_train = data[data['name'].isin(
+        mal_list[:448]) | data['name'].isin(beg_list[:232])]
+    y_train = X_train.values[:, -1].astype('int')
+    X_train = X_train.values[:, 1:-1]
+
+    X_test = data[data['name'].isin(
+        mal_list[448:]) | data['name'].isin(beg_list[232:])]
+    y_test = X_test.values[:, -1].astype('int')
+    X_test = X_test.values[:, 1:-1]
+
+    lsvc = LinearSVC(C=0.01, penalty="l1", dual=False, 
+                    random_state=args.seed).fit(X_train, y_train)
     sfm = SelectFromModel(lsvc, prefit=True)
     X_train = sfm.transform(X_train)
     X_test = sfm.transform(X_test)

@@ -10,7 +10,7 @@ features = [
     "num_user_login",
     "num_total_running", "num_total_sleeping", "num_total_zombie", "num_total_stopped",
     "cpu_%_us", "cpu_%_sy", "cpu_%_ni", "cpu_%_id",
-    "cpu_%_wa", "cpu_%_hi", "cpu_%_si", "cpu_%_st", 
+    "cpu_%_wa", "cpu_%_hi", "cpu_%_si", "cpu_%_st",
     "mem_total", "mem_used", "mem_free", "mem_buffers",
     "swap_total", "swap_used", "swap_free", "swap_cache"
 ]
@@ -34,20 +34,20 @@ for dir_ in flist:
         d = len(data) // 40
         for i, step in enumerate(data):
             if i / d == 40:
-                    break
+                break
             if i % d == 0:
                 for ft in features:
                     vt.append(float(step[ft]))
-                
 
-    per.append(np.array(vt, dtype='Float32'))
+    vt.insert(0, dir_[:-1])
+    if sys.argv[2].startswith('list_malware'):
+        vt.append(0)
+    else:
+        vt.append(1)
+    per.append(vt)
 
-header = list()
+header = ['name']
 for i in range(40):
     header.extend([ft + str(i) for ft in features])
+header.append('label')
 pd.DataFrame(per).to_csv(sys.argv[3], header=header, index=None)
-    
-            
-                    
-            
-

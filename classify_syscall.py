@@ -56,16 +56,21 @@ def report(names, y_true, y_pred):
 
 
 def prepare_data(args):
-    syscall = pd.read_csv('data/syscall.csv')
-    mal_list = pd.read_csv('list_malware.csv').values
-    # beg_list = pd.read_csv('list_benign.csv').values
-    syscall['label'] = syscall['name'].apply(lambda x: 0 if x in mal_list else 1)
-    syscall = syscall.drop(columns=['name'])
-    print(syscall.head())
+    data = pd.read_csv('data/syscall.csv')
+    mal_list = pd.read_csv(
+        'list_malware.csv', header=None).values[:-1].reshape(-1)
+    beg_list = pd.read_csv(
+        'list_benign.csv', header=None).values[:-1].reshape(-1)
 
-    X, y = syscall.values[:, :-1], syscall.values[:, -1]
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=args.seed, stratify=y)
+    X_train = data[data['name'].isin(
+        mal_list[:448]) | data['name'].isin(beg_list[:232])]
+    y_train = X_train.values[:, -1].astype('int')
+    X_train = X_train.values[:, 1:-1]
+
+    X_test = data[data['name'].isin(
+        mal_list[448:]) | data['name'].isin(beg_list[232:])]
+    y_test = X_test.values[:, -1].astype('int')
+    X_test = X_test.values[:, 1:-1]
     
     lsvc = LinearSVC(C=0.01, penalty="l1", dual=False,
                      random_state=args.seed).fit(X_train, y_train)
