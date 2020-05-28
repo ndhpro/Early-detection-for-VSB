@@ -56,9 +56,9 @@ def report(names, y_true, y_pred):
 
 
 def prepare_data(args):
-    malware = pd.read_csv('net_malware.csv').values
+    malware = pd.read_csv('data/net_malware.csv').values
     mal_label = np.zeros((len(malware)))
-    benign = pd.read_csv('net_benign.csv').values
+    benign = pd.read_csv('data/net_benign.csv').values
     beg_label = np.ones((len(benign)))
     X = np.vstack([malware, benign])
     y = np.hstack([mal_label, beg_label])

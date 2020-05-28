@@ -95,7 +95,7 @@ def save_embedding(output_path, model, files, dimensions):
     out = []
     for f in files:
         identifier = f.split("/")[-1].strip(".json")
-        out.append([identifier] + list(model.docvecs["g_"+identifier]))
+        out.append([identifier[:-1]] + list(model.docvecs["g_"+identifier]))
     column_names = ['name'] + ["#"+str(dim) for dim in range(dimensions)]
     out = pd.DataFrame(out, columns=column_names)
     out.to_csv(output_path, index=None)
