@@ -7,7 +7,6 @@ import pandas as pd
 
 # python3 gen_per.py <report_dir> <file_list.csv> <per.csv>
 features = [
-    "num_user_login",
     "num_total_running", "num_total_sleeping", "num_total_zombie", "num_total_stopped",
     "cpu_%_us", "cpu_%_sy", "cpu_%_ni", "cpu_%_id",
     "cpu_%_wa", "cpu_%_hi", "cpu_%_si", "cpu_%_st",
@@ -24,16 +23,16 @@ for dir_ in flist:
     vt = list()
     with open(report_path, 'r') as f:
         data = json.load(f)
-    if len(data) <= 40:
+    if len(data) <= 20:
         for step in data:
             for ft in features:
                 vt.append(float(step[ft]))
-        while len(vt) < 40 * 21:
+        while len(vt) < 20 * 20:
             vt.append(0)
     else:
-        d = len(data) // 40
+        d = len(data) // 20
         for i, step in enumerate(data):
-            if i / d == 40:
+            if i / d == 20:
                 break
             if i % d == 0:
                 for ft in features:
@@ -47,7 +46,7 @@ for dir_ in flist:
     per.append(vt)
 
 header = ['name']
-for i in range(40):
+for i in range(20):
     header.extend([ft + str(i) for ft in features])
 header.append('label')
 pd.DataFrame(per).to_csv(sys.argv[3], header=header, index=None)

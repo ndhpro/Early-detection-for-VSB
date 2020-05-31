@@ -1,15 +1,14 @@
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
-
-from sklearn import metrics
-from sklearn.model_selection import train_test_split
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, LSTM, Dropout
-from tensorflow.keras.utils import to_categorical
 import itertools
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.layers import Dense, LSTM, Dropout
+from tensorflow.keras.models import Sequential
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from matplotlib import pyplot as plt
+import pandas as pd
+import numpy as np
+import os
 
 # Loading dataset
 malware = pd.read_csv('data/per_malware.csv')
@@ -20,36 +19,41 @@ mal_list = pd.read_csv(
 beg_list = pd.read_csv(
     'list_benign.csv', header=None).values[:-1].reshape(-1)
 
+t_mal = int(len(mal_list) * 0.7)
+t_beg = int(len(beg_list) * 0.7)
 X_train = data[data['name'].isin(
-    mal_list[:448]) | data['name'].isin(beg_list[:232])]
+    mal_list[:t_mal]) | data['name'].isin(beg_list[:t_beg])]
 y_train = X_train.values[:, -1].astype('int')
 X_train = X_train.values[:, 1:-1]
 
 X_test = data[data['name'].isin(
-    mal_list[448:]) | data['name'].isin(beg_list[232:])]
+    mal_list[t_mal:]) | data['name'].isin(beg_list[t_beg:])]
 y_test = X_test.values[:, -1].astype('int')
 X_test = X_test.values[:, 1:-1]
 
-X_train = np.array(X_train.reshape(-1, 40, 21), dtype='Float32')
-X_test = np.array(X_test.reshape(-1, 40, 21), dtype='Float32')
+X_train = np.array(X_train.reshape(-1, 20, 20), dtype='Float32')
+X_test = np.array(X_test.reshape(-1, 20, 20), dtype='Float32')
 y_train = to_categorical(y_train, num_classes=2)
 y_true = y_test
 y_test = to_categorical(y_test, num_classes=2)
 
 model = Sequential()
-model.add(LSTM(units=32, dropout=0.2, recurrent_dropout=0.2, input_shape=(40, 21)))
+model.add(LSTM(units=32, dropout=0.2, recurrent_dropout=0.2, input_shape=(20, 20)))
 model.add(Dense(2, activation='softmax'))
 model.compile(loss='categorical_crossentropy',
               optimizer='adam', metrics=['accuracy'])
 print(model.summary())
 
 batch_size = 1024
-history = model.fit(X_train, y_train, epochs=500, batch_size=batch_size, verbose=2, validation_split=1/5)
+checkpoint = ModelCheckpoint(
+    'model/per_lstm.h5', save_best_only=True, save_weights_only=True)
+history = model.fit(X_train, y_train, epochs=300, callbacks=[checkpoint],
+                    batch_size=batch_size, verbose=2, validation_split=1/5)
+
+model.load_weights('model/per_lstm.h5')
 
 y_pred = model.predict(X_test, verbose=1, batch_size=batch_size)
 y_pred = np.argmax(y_pred, axis=1)
-
-model.save('model/per_lstm.h5')
 
 with open('log/report_per.txt', 'w') as f:
     clf_report = metrics.classification_report(

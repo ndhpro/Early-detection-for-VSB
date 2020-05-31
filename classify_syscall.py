@@ -57,18 +57,21 @@ def report(names, y_true, y_pred):
 
 def prepare_data(args):
     data = pd.read_csv('data/syscall.csv')
+    data = data.sort_values(by=['name'])
     mal_list = pd.read_csv(
         'list_malware.csv', header=None).values[:-1].reshape(-1)
     beg_list = pd.read_csv(
         'list_benign.csv', header=None).values[:-1].reshape(-1)
 
+    t_mal = int(len(mal_list) * 0.7)
+    t_beg = int(len(beg_list) * 0.7)
     X_train = data[data['name'].isin(
-        mal_list[:448]) | data['name'].isin(beg_list[:232])]
+        mal_list[:t_mal]) | data['name'].isin(beg_list[:t_beg])]
     y_train = X_train.values[:, -1].astype('int')
     X_train = X_train.values[:, 1:-1]
 
     X_test = data[data['name'].isin(
-        mal_list[448:]) | data['name'].isin(beg_list[232:])]
+        mal_list[t_mal:]) | data['name'].isin(beg_list[t_beg:])]
     y_test = X_test.values[:, -1].astype('int')
     X_test = X_test.values[:, 1:-1]
     
@@ -77,10 +80,12 @@ def prepare_data(args):
     sfm = SelectFromModel(lsvc, prefit=True)
     X_train = sfm.transform(X_train)
     X_test = sfm.transform(X_test)
+    pickle.dump(sfm, open('model/syscall_sfm.sav', 'wb'))
 
     scaler = Normalizer()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
+    print(y_test)
 
     return X_train, y_train, X_test, y_test
 
@@ -101,7 +106,7 @@ def main():
     names = ["SVM", "k-Nearest Neighbors",
              "Decision Tree", "Random Forest", "Bagging"]
     classifiers = [
-        SVC(kernel='rbf'),
+        SVC(kernel='rbf', probability=True),
         KNeighborsClassifier(n_jobs=-1),
         DecisionTreeClassifier(random_state=args.seed),
         RandomForestClassifier(random_state=args.seed, n_jobs=-1),

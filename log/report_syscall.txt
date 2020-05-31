@@ -37,59 +37,59 @@ Confusion matrix:
  [  9  91]]
 ----------------------------------------------------------------
 Decision Tree:
-Accuracy: 0.9384
-ROC AUC: 0.9387
-TPR: 0.9400
-FPR: 0.0625
+Accuracy: 0.9486
+ROC AUC: 0.9561
+TPR: 0.9800
+FPR: 0.0677
 Classification report:
               precision    recall  f1-score   support
 
-           0     0.9677    0.9375    0.9524       192
-           1     0.8868    0.9400    0.9126       100
+           0     0.9890    0.9323    0.9598       192
+           1     0.8829    0.9800    0.9289       100
 
-    accuracy                         0.9384       292
-   macro avg     0.9273    0.9387    0.9325       292
-weighted avg     0.9400    0.9384    0.9388       292
+    accuracy                         0.9486       292
+   macro avg     0.9359    0.9561    0.9443       292
+weighted avg     0.9526    0.9486    0.9492       292
 
 Confusion matrix:
-[[180  12]
- [  6  94]]
+[[179  13]
+ [  2  98]]
 ----------------------------------------------------------------
 Random Forest:
-Accuracy: 0.9555
-ROC AUC: 0.9470
-TPR: 0.9200
-FPR: 0.0260
+Accuracy: 0.9658
+ROC AUC: 0.9572
+TPR: 0.9300
+FPR: 0.0156
 Classification report:
               precision    recall  f1-score   support
 
-           0     0.9590    0.9740    0.9664       192
-           1     0.9485    0.9200    0.9340       100
+           0     0.9643    0.9844    0.9742       192
+           1     0.9688    0.9300    0.9490       100
 
-    accuracy                         0.9555       292
-   macro avg     0.9537    0.9470    0.9502       292
-weighted avg     0.9554    0.9555    0.9553       292
+    accuracy                         0.9658       292
+   macro avg     0.9665    0.9572    0.9616       292
+weighted avg     0.9658    0.9658    0.9656       292
 
 Confusion matrix:
-[[187   5]
- [  8  92]]
+[[189   3]
+ [  7  93]]
 ----------------------------------------------------------------
 Bagging:
-Accuracy: 0.9555
-ROC AUC: 0.9518
-TPR: 0.9400
-FPR: 0.0365
+Accuracy: 0.9452
+ROC AUC: 0.9392
+TPR: 0.9200
+FPR: 0.0417
 Classification report:
               precision    recall  f1-score   support
 
-           0     0.9686    0.9635    0.9661       192
-           1     0.9307    0.9400    0.9353       100
+           0     0.9583    0.9583    0.9583       192
+           1     0.9200    0.9200    0.9200       100
 
-    accuracy                         0.9555       292
-   macro avg     0.9496    0.9518    0.9507       292
-weighted avg     0.9556    0.9555    0.9555       292
+    accuracy                         0.9452       292
+   macro avg     0.9392    0.9392    0.9392       292
+weighted avg     0.9452    0.9452    0.9452       292
 
 Confusion matrix:
-[[185   7]
- [  6  94]]
+[[184   8]
+ [  8  92]]
 ----------------------------------------------------------------

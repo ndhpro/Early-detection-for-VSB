@@ -38,22 +38,22 @@ Confusion matrix:
 ----------------------------------------------------------------
 Decision Tree:
 Accuracy: 0.9007
-ROC AUC: 0.8718
-TPR: 0.7800
-FPR: 0.0365
+ROC AUC: 0.8694
+TPR: 0.7700
+FPR: 0.0312
 Classification report:
               precision    recall  f1-score   support
 
-           0     0.8937    0.9635    0.9273       192
-           1     0.9176    0.7800    0.8432       100
+           0     0.8900    0.9688    0.9277       192
+           1     0.9277    0.7700    0.8415       100
 
     accuracy                         0.9007       292
-   macro avg     0.9057    0.8718    0.8853       292
-weighted avg     0.9019    0.9007    0.8985       292
+   macro avg     0.9088    0.8694    0.8846       292
+weighted avg     0.9029    0.9007    0.8982       292
 
 Confusion matrix:
-[[185   7]
- [ 22  78]]
+[[186   6]
+ [ 23  77]]
 ----------------------------------------------------------------
 Random Forest:
 Accuracy: 0.9041
