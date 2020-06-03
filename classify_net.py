@@ -13,9 +13,7 @@ from sklearn.svm import LinearSVC, SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier
-
 from sklearn.feature_selection import SelectFromModel, SelectKBest, chi2
-from sklearn.feature_extraction.text import CountVectorizer
 
 
 def draw_roc(names, colors, y_true, y_pred):
@@ -60,25 +58,16 @@ def prepare_data(args):
     benign = pd.read_csv('data/net_benign.csv')
     data = pd.concat([malware, benign], ignore_index=True)
     data = data.sort_values(by=['name'])
-    mal_list = pd.read_csv(
-        'list_malware.csv', header=None).values[:-1].reshape(-1)
-    beg_list = pd.read_csv(
-        'list_benign.csv', header=None).values[:-1].reshape(-1)
+    X = data.iloc[:, 1:-1].values
+    y = data.iloc[:, -1].values
 
-    t_mal = int(len(mal_list) * 0.7)
-    t_beg = int(len(beg_list) * 0.7)
-    X_train = data[data['name'].isin(
-        mal_list[:t_mal]) | data['name'].isin(beg_list[:t_beg])]
-    y_train = X_train.values[:, -1].astype('int')
-    X_train = X_train.values[:, 1:-1]
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, random_state=args.seed,
+        test_size=0.3, stratify=y
+    )
 
-    X_test = data[data['name'].isin(
-        mal_list[t_mal:]) | data['name'].isin(beg_list[t_beg:])]
-    y_test = X_test.values[:, -1].astype('int')
-    X_test = X_test.values[:, 1:-1]
-
-    lsvc = LinearSVC(C=0.01, penalty="l1", dual=False, 
-                    random_state=args.seed).fit(X_train, y_train)
+    lsvc = LinearSVC(C=0.01, penalty="l1", dual=False,
+                     random_state=args.seed).fit(X_train, y_train)
     sfm = SelectFromModel(lsvc, prefit=True)
     X_train = sfm.transform(X_train)
     X_test = sfm.transform(X_test)
@@ -108,10 +97,10 @@ def main():
     names = ["SVM", "k-Nearest Neighbors",
              "Decision Tree", "Random Forest", "Bagging"]
     classifiers = [
-        SVC(kernel='rbf', probability=True),
+        SVC(kernel='rbf', probability=True, class_weight='balanced'),
         KNeighborsClassifier(n_jobs=-1),
-        DecisionTreeClassifier(random_state=args.seed),
-        RandomForestClassifier(random_state=args.seed, n_jobs=-1),
+        DecisionTreeClassifier(random_state=args.seed, class_weight='balanced'),
+        RandomForestClassifier(random_state=args.seed, n_jobs=-1, class_weight='balanced'),
         BaggingClassifier(random_state=args.seed, n_jobs=-1)
     ]
     hyperparam = [
@@ -135,10 +124,11 @@ def main():
         if not args.test:
             clf = GridSearchCV(est, hyper, cv=5, n_jobs=-1)
             clf.fit(X_train, y_train)
+            logger.info(clf.score(X_train, y_train))
             y_true[name],  y_pred[name] = y_test, clf.predict(X_test)
             logger.info('___accuracy: %0.4f' %
                         metrics.accuracy_score(y_true[name], y_pred[name]))
-            print(clf.best_estimator_)
+            # print(clf.best_estimator_)
             pickle.dump(clf, open('model/net_' + str(name) + '.sav', 'wb'))
         else:
             clf = pickle.load(open('model/net_' + str(name) + '.sav', 'rb'))

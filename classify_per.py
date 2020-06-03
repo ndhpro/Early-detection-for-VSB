@@ -14,31 +14,25 @@ import os
 malware = pd.read_csv('data/per_malware.csv')
 benign = pd.read_csv('data/per_benign.csv')
 data = pd.concat([malware, benign], ignore_index=True)
-mal_list = pd.read_csv(
-    'list_malware.csv', header=None).values[:-1].reshape(-1)
-beg_list = pd.read_csv(
-    'list_benign.csv', header=None).values[:-1].reshape(-1)
+data = data.sort_values(by=['name'])
+X = data.iloc[:, 1:-1].values
+y = data.iloc[:, -1].values
 
-t_mal = int(len(mal_list) * 0.7)
-t_beg = int(len(beg_list) * 0.7)
-X_train = data[data['name'].isin(
-    mal_list[:t_mal]) | data['name'].isin(beg_list[:t_beg])]
-y_train = X_train.values[:, -1].astype('int')
-X_train = X_train.values[:, 1:-1]
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, random_state=2020,
+    test_size=0.3, stratify=y
+)
+print(X_train.shape, X_test.shape)
+print(y_test)
 
-X_test = data[data['name'].isin(
-    mal_list[t_mal:]) | data['name'].isin(beg_list[t_beg:])]
-y_test = X_test.values[:, -1].astype('int')
-X_test = X_test.values[:, 1:-1]
-
-X_train = np.array(X_train.reshape(-1, 20, 20), dtype='Float32')
-X_test = np.array(X_test.reshape(-1, 20, 20), dtype='Float32')
+X_train = np.array(X_train.reshape(-1, 10, 20), dtype='Float32')
+X_test = np.array(X_test.reshape(-1, 10, 20), dtype='Float32')
 y_train = to_categorical(y_train, num_classes=2)
 y_true = y_test
 y_test = to_categorical(y_test, num_classes=2)
 
 model = Sequential()
-model.add(LSTM(units=32, dropout=0.2, recurrent_dropout=0.2, input_shape=(20, 20)))
+model.add(LSTM(units=32, dropout=0.2, recurrent_dropout=0.2, input_shape=(10, 20)))
 model.add(Dense(2, activation='softmax'))
 model.compile(loss='categorical_crossentropy',
               optimizer='adam', metrics=['accuracy'])

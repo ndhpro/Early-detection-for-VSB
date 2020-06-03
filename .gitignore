@@ -1,5 +1,5 @@
 logs/
 net/
-syscall*/
+syscall/
 __pycache__/
 .vscode/

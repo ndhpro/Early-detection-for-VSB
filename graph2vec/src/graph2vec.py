@@ -93,10 +93,10 @@ def save_embedding(output_path, model, files, dimensions):
     :param dimensions: The embedding dimension parameter.
     """
     out = []
-    mal = pd.read_csv('list_malware.csv').values
+    mal = pd.read_csv('list_malware.csv', header=None).values
 
     for f in files:
-        identifier = f.split("/")[-1].strip(".json")
+        identifier = f.strip(".json").split("/")[-1]
         if identifier[:-1] in mal:
             label = 0
         else:
