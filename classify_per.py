@@ -23,16 +23,15 @@ X_train, X_test, y_train, y_test = train_test_split(
     test_size=0.3, stratify=y
 )
 print(X_train.shape, X_test.shape)
-print(y_test)
 
-X_train = np.array(X_train.reshape(-1, 10, 20), dtype='Float32')
-X_test = np.array(X_test.reshape(-1, 10, 20), dtype='Float32')
+X_train = np.array(X_train.reshape(-1, 20, 20), dtype='Float32')
+X_test = np.array(X_test.reshape(-1, 20, 20), dtype='Float32')
 y_train = to_categorical(y_train, num_classes=2)
 y_true = y_test
 y_test = to_categorical(y_test, num_classes=2)
 
 model = Sequential()
-model.add(LSTM(units=32, dropout=0.2, recurrent_dropout=0.2, input_shape=(10, 20)))
+model.add(LSTM(units=32, dropout=0.2, recurrent_dropout=0.2, input_shape=(20, 20)))
 model.add(Dense(2, activation='softmax'))
 model.compile(loss='categorical_crossentropy',
               optimizer='adam', metrics=['accuracy'])
@@ -41,7 +40,7 @@ print(model.summary())
 batch_size = 1024
 checkpoint = ModelCheckpoint(
     'model/per_lstm.h5', save_best_only=True, save_weights_only=True)
-history = model.fit(X_train, y_train, epochs=300, callbacks=[checkpoint],
+history = model.fit(X_train, y_train, epochs=200, callbacks=[checkpoint],
                     batch_size=batch_size, verbose=2, validation_split=1/5)
 
 model.load_weights('model/per_lstm.h5')
@@ -76,18 +75,3 @@ ax[1].plot(history.history['val_accuracy'],
            color='r', label="Validation accuracy")
 legend = ax[1].legend(loc='best', shadow=True)
 plt.savefig('log/per_history.png')
-
-# Drawing ROC curve
-plt.figure()
-fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred)
-auc = metrics.roc_auc_score(y_true, y_pred)
-print(auc)
-plt.plot(fpr, tpr, color='blue', label='AUC = %0.4f' % (auc))
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-plt.plot([0, 1], [0, 1], 'r--')
-plt.xlabel('1-Specificity(False Positive Rate)')
-plt.ylabel('Sensitivity(True Positive Rate)')
-plt.title('Receiver Operating Characteristic')
-plt.legend()
-plt.savefig('log/roc_per.png')

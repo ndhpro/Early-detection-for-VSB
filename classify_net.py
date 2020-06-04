@@ -7,30 +7,14 @@ import pickle
 import logging
 
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.preprocessing import StandardScaler, Normalizer
-from sklearn import metrics
+from sklearn.feature_selection import SelectFromModel
+from sklearn.preprocessing import Normalizer
 from sklearn.svm import LinearSVC, SVC
+from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, BaggingClassifier
-from sklearn.feature_selection import SelectFromModel, SelectKBest, chi2
-
-
-def draw_roc(names, colors, y_true, y_pred):
-    for name, color in zip(names, colors):
-        fpr, tpr, _ = metrics.roc_curve(y_true[name], y_pred[name])
-        auc = metrics.roc_auc_score(y_true[name], y_pred[name])
-        plt.plot(fpr, tpr, color=color,
-                 label='%s ROC (area = %0.3f)' % (name, auc))
-    plt.plot([0, 1], [0, 1], 'r--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('1-Specificity(False Positive Rate)')
-    plt.ylabel('Sensitivity(True Positive Rate)')
-    plt.title('Receiver Operating Characteristic')
-    plt.legend(loc="lower right")
-    # plt.show()
-    plt.savefig('log/roc_net.png')
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import metrics
 
 
 def report(names, y_true, y_pred):
@@ -71,12 +55,10 @@ def prepare_data(args):
     sfm = SelectFromModel(lsvc, prefit=True)
     X_train = sfm.transform(X_train)
     X_test = sfm.transform(X_test)
-    pickle.dump(sfm, open('model/net_sfm.sav', 'wb'))
 
     scaler = Normalizer()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-    print(y_test)
 
     return X_train, y_train, X_test, y_test
 
@@ -94,16 +76,17 @@ def main():
 
     y_true = {}
     y_pred = {}
-    names = ["SVM", "k-Nearest Neighbors",
-             "Decision Tree", "Random Forest", "Bagging"]
+    names = ["NaiveBayes", "SVM", "k-NN",
+             "DecisionTree", "RandomForest"]
     classifiers = [
-        SVC(kernel='rbf', probability=True, class_weight='balanced'),
+        GaussianNB(),
+        SVC(kernel='rbf', probability=True),
         KNeighborsClassifier(n_jobs=-1),
-        DecisionTreeClassifier(random_state=args.seed, class_weight='balanced'),
-        RandomForestClassifier(random_state=args.seed, n_jobs=-1, class_weight='balanced'),
-        BaggingClassifier(random_state=args.seed, n_jobs=-1)
+        DecisionTreeClassifier(random_state=args.seed),
+        RandomForestClassifier(random_state=args.seed, n_jobs=-1)
     ]
     hyperparam = [
+        {},
         {'C': np.logspace(-3, 3, 7), 'gamma': ['scale', 'auto']},
         {'n_neighbors': [5, 50, 500], 'weights': [
             'uniform', 'distance'], 'algorithm': ['ball_tree', 'kd_tree', 'brute']},
@@ -111,33 +94,27 @@ def main():
             'best', 'random'], 'max_features': ['sqrt', 'log2', None]},
         {'n_estimators': [10, 100, 1000], 'criterion': [
             'gini', 'entropy'], 'max_features': ['sqrt', 'log2', None]},
-        {'n_estimators': [10, 100, 1000]}
     ]
-    colors = ['blue', 'orange', 'green', 'red',
-              'purple', 'brown', 'pink', 'gray']
 
     X_train, y_train, X_test, y_test = prepare_data(args)
     logger.info(str(X_train.shape) + ' ' + str(X_test.shape))
 
     for name, est, hyper in zip(names, classifiers, hyperparam):
-        logger.info(name + '...')
+        logger.info('Classifier: ' + name)
         if not args.test:
             clf = GridSearchCV(est, hyper, cv=5, n_jobs=-1)
             clf.fit(X_train, y_train)
-            logger.info(clf.score(X_train, y_train))
+            logger.info('Score: %0.4f' % clf.score(X_train, y_train))
             y_true[name],  y_pred[name] = y_test, clf.predict(X_test)
-            logger.info('___accuracy: %0.4f' %
+            logger.info('Test accuracy: %0.4f' %
                         metrics.accuracy_score(y_true[name], y_pred[name]))
-            # print(clf.best_estimator_)
             pickle.dump(clf, open('model/net_' + str(name) + '.sav', 'wb'))
         else:
             clf = pickle.load(open('model/net_' + str(name) + '.sav', 'rb'))
             y_true[name], y_pred[name] = y_test, clf.predict(X_test)
 
     report(names, y_true, y_pred)
-    draw_roc(names, colors, y_true, y_pred)
 
 
 if __name__ == "__main__":
-    # prepare_data(None)
     main()

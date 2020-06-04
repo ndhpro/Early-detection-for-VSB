@@ -23,20 +23,16 @@ for dir_ in flist:
     vt = list()
     with open(report_path, 'r') as f:
         data = json.load(f)
-    if len(data) <= 10:
+    if len(data) <= 20:
         for step in data:
             for ft in features:
                 vt.append(float(step[ft]))
-        while len(vt) < 10 * 20:
+        while len(vt) < 20 * 20:
             vt.append(0)
     else:
-        d = len(data) // 10
-        for i, step in enumerate(data):
-            if i / d == 10:
-                break
-            if i % d == 0:
-                for ft in features:
-                    vt.append(float(step[ft]))
+        for step in data[:20]:
+            for ft in features:
+                vt.append(float(step[ft]))
 
     vt.insert(0, dir_[:-1])
     if sys.argv[2].startswith('list_malware'):
@@ -46,7 +42,7 @@ for dir_ in flist:
     per.append(vt)
 
 header = ['name']
-for i in range(10):
+for i in range(20):
     header.extend([ft + str(i) for ft in features])
 header.append('label')
 pd.DataFrame(per).to_csv(sys.argv[3], header=header, index=None)
