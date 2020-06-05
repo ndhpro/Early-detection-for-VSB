@@ -1,21 +1,41 @@
 from __future__ import print_function
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, LSTM, Dropout
-from tensorflow.keras.utils import to_categorical
-from sklearn.svm import LinearSVC, SVC
-from sklearn import metrics
-from sklearn.feature_selection import SelectFromModel
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, Normalizer
-import pickle
-import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import pandas as pd
+import matplotlib.pyplot as plt
+import pickle
+
+from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import SelectFromModel
+from sklearn.preprocessing import Normalizer
+from sklearn.svm import LinearSVC
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn import metrics
+
+
+def prepare_data_net():
+    malware = pd.read_csv('data/net_malware.csv')
+    benign = pd.read_csv('data/net_benign.csv')
+    data = pd.concat([malware, benign], ignore_index=True)
+    data = data.sort_values(by=['name'])
+    X = data.iloc[:, 1:-1].values
+    y = data.iloc[:, -1].values
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, random_state=2020,
+        test_size=0.3, stratify=y
+    )
+
+    lsvc = LinearSVC(C=0.01, penalty="l1", dual=False,
+                     random_state=2020).fit(X_train, y_train)
+    sfm = SelectFromModel(lsvc, prefit=True)
+    X_train = sfm.transform(X_train)
+    X_test = sfm.transform(X_test)
+
+    scaler = Normalizer()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    return X_train, y_train, X_test, y_test
 
 
 def prepare_data_per():
@@ -31,26 +51,33 @@ def prepare_data_per():
         test_size=0.3, stratify=y
     )
 
-    X_train = np.array(X_train.reshape(-1, 10, 20), dtype='Float32')
-    X_test = np.array(X_test.reshape(-1, 10, 20), dtype='Float32')
+    lsvc = LinearSVC(C=0.01, penalty="l1", dual=False,
+                     random_state=2020).fit(X_train, y_train)
+    sfm = SelectFromModel(lsvc, prefit=True)
+    X_train = sfm.transform(X_train)
+    X_test = sfm.transform(X_test)
 
-    y_train = to_categorical(y_train, num_classes=2)
+    scaler = Normalizer()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
 
     return X_train, y_train, X_test, y_test
 
 
-def prepare_data_syscall(seed):
+def prepare_data_syscall():
     data = pd.read_csv('data/syscall.csv')
     data = data.sort_values(by=['name'])
     X = data.iloc[:, 1:-1].values
     y = data.iloc[:, -1].values
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, random_state=seed,
+        X, y, random_state=2020,
         test_size=0.3, stratify=y
     )
 
-    sfm = pickle.load(open('model/syscall_sfm.sav', 'rb'))
+    lsvc = LinearSVC(C=0.01, penalty="l1", dual=False,
+                     random_state=2020).fit(X_train, y_train)
+    sfm = SelectFromModel(lsvc, prefit=True)
     X_train = sfm.transform(X_train)
     X_test = sfm.transform(X_test)
 
@@ -61,78 +88,75 @@ def prepare_data_syscall(seed):
     return X_train, y_train, X_test, y_test
 
 
-def prepare_data_net(seed):
-    malware = pd.read_csv('data/net_malware.csv')
-    benign = pd.read_csv('data/net_benign.csv')
-    data = pd.concat([malware, benign], ignore_index=True)
-    data = data.sort_values(by=['name'])
-    X = data.iloc[:, 1:-1].values
-    y = data.iloc[:, -1].values
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, random_state=seed,
-        test_size=0.3, stratify=y
-    )
-
-    sfm = pickle.load(open('model/net_sfm.sav', 'rb'))
-    X_train = sfm.transform(X_train)
-    X_test = sfm.transform(X_test)
-
-    scaler = Normalizer()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-
-    return X_train, y_train, X_test, y_test
+def load_model(net, per, sys):
+    clf_net = pickle.load(open('model/net_' + net + '.sav', 'rb'))
+    clf_per = pickle.load(open('model/per_' + per + '.sav', 'rb'))
+    clf_sys = pickle.load(open('model/syscall_' + sys + '.sav', 'rb'))
+    return clf_net, clf_per, clf_sys
 
 
-X_train_sys, y_train_sys, X_test_sys, y_test_sys = prepare_data_syscall(
-    2020)
-X_train_net, y_train_net, X_test_net, y_test_net = prepare_data_net(
-    2020)
+X_train_net, y_train_net, X_test_net, y_test_net = prepare_data_net()
 X_train_per, y_train_per, X_test_per, y_test_per = prepare_data_per()
+X_train_sys, y_train_sys, X_test_sys, y_test_sys = prepare_data_syscall()
 
-lstm_per = Sequential()
-lstm_per.add(LSTM(units=32, dropout=0.2,
-                  recurrent_dropout=0.2, input_shape=(10, 20)))
-lstm_per.add(Dense(2, activation='softmax'))
-lstm_per.compile(loss='categorical_crossentropy',
-                 optimizer=Adam(learning_rate=0.01), metrics=['accuracy'])
-lstm_per.load_weights('model/per_lstm.h5')
-clf_net = pickle.load(open('model/net_Random Forest.sav', 'rb'))
-clf_sys = pickle.load(open('model/syscall_Random Forest.sav', 'rb'))
+names = ["SVM", "k-NN", "DecisionTree", "RandomForest"]
+df = list()
+for net in names:
+    for per in names:
+        for sys in names:
+            res = dict()
+            res['ensemble'] = net + ' + ' + per + ' + ' + sys
+            clf_net, clf_per, clf_sys = load_model(net, per, sys)
+            # Weak classifier
+            res_net = 100 * metrics.accuracy_score(
+                y_test_net, clf_net.predict(X_test_net))
+            res_per = 100 * metrics.accuracy_score(
+                y_test_per, clf_per.predict(X_test_per))
+            res_sys = 100 * metrics.accuracy_score(
+                y_test_sys, clf_sys.predict(X_test_sys))
+            res['net'] = '%.2f' % res_net
+            res['per'] = '%.2f' % res_per
+            res['sys'] = '%.2f' % res_sys
 
-# Soft Voting
-y_pred_net = clf_net.predict_proba(X_test_net)
-y_pred_sys = clf_sys.predict_proba(X_test_sys)
-y_pred_per = lstm_per.predict(X_test_per)
+            # Soft Voting
+            y_pred_net = clf_net.predict_proba(X_test_net)
+            y_pred_per = clf_per.predict_proba(X_test_per)
+            y_pred_sys = clf_sys.predict_proba(X_test_sys)
+            y_pred = (y_pred_net + y_pred_sys + y_pred_per) / 3
+            y_pred = np.argmax(y_pred, axis=1)
+            res_vote = 100 * metrics.accuracy_score(y_test_net, y_pred)
+            res['vote'] = '%.2f' % res_vote
 
-y_pred = (y_pred_net + y_pred_sys + y_pred_per) / 3
-y_pred = np.argmax(y_pred, axis=1)
-print(metrics.accuracy_score(y_test_net, clf_net.predict(X_test_net)))
-print(metrics.accuracy_score(y_test_sys, clf_sys.predict(X_test_sys)))
-print(metrics.accuracy_score(y_test_per, np.argmax(lstm_per.predict(X_test_per), axis=1)))
-print()
-print(metrics.accuracy_score(y_test_net, y_pred))
+            # Prepare data
+            y_pred_train_net = clf_net.predict_proba(
+                X_train_net)[:, 0].reshape(-1, 1)
+            y_pred_train_per = clf_per.predict_proba(
+                X_train_per)[:, 0].reshape(-1, 1)
+            y_pred_train_sys = clf_sys.predict_proba(
+                X_train_sys)[:, 0].reshape(-1, 1)
+            y_pred_train = np.hstack(
+                [y_pred_train_net, y_pred_train_sys, y_pred_train_per])
 
-y_pred_train_net = clf_net.predict_proba(X_train_net)[:, 0].reshape(-1, 1)
-y_pred_train_sys = clf_sys.predict_proba(X_train_sys)[:, 0].reshape(-1, 1)
-y_pred_train_per = lstm_per.predict(X_train_per)[:, 0].reshape(-1, 1)
-y_pred_train = np.hstack(
-    [y_pred_train_net, y_pred_train_sys, y_pred_train_per])
+            # Linear Regression
+            reg = LinearRegression()
+            reg.fit(y_pred_train, y_train_sys)
+            y_pred_test = np.hstack([y_pred_net[:, 0].reshape(-1, 1),
+                                     y_pred_sys[:, 0].reshape(-1, 1),
+                                     y_pred_per[:, 0].reshape(-1, 1)])
+            y_pred_prob = reg.predict(y_pred_test)
+            y_pred = [y > 0.5 for y in y_pred_prob]
+            res_lin = 100 * metrics.accuracy_score(y_test_net, y_pred)
+            res['linear reg'] = '%.2f' % res_lin
 
-# Linear Regression
-reg = LinearRegression(fit_intercept=False)
-reg.fit(y_pred_train, y_train_sys)
-y_pred_test = np.hstack([y_pred_net[:, 0].reshape(-1, 1),
-                         y_pred_sys[:, 0].reshape(-1, 1),
-                         y_pred_per[:, 0].reshape(-1, 1)])
-y_pred_prob = reg.predict(y_pred_test)
-y_pred = [y > 0.5 for y in y_pred_prob]
-print(reg.coef_)
-print(metrics.accuracy_score(y_test_net, y_pred))
+            # Logisic Regression
+            reg = LogisticRegression()
+            reg.fit(y_pred_train, y_train_sys)
+            y_pred = reg.predict(y_pred_test)
+            res_log = 100 * metrics.accuracy_score(y_test_net, y_pred)
+            res['logistic reg'] = '%.2f' % res_log
 
-# Logisic Regression
-reg = LogisticRegression()
-reg.fit(y_pred_train, y_train_sys)
-y_pred = reg.predict(y_pred_test)
-print(metrics.accuracy_score(y_test_net, y_pred))
+            df.append(res)
+
+header = ['ensemble', 'net', 'per', 'sys',
+          'vote', 'linear reg', 'logistic reg']
+pd.DataFrame(df)[header].to_csv('result.csv')

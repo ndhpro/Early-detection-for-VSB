@@ -20,29 +20,30 @@ with open(sys.argv[2], 'r') as f:
 per = list()
 for dir_ in flist:
     report_path = full_report_path + dir_[:-1] + '/top.json'
-    vt = list()
+    vt = dict()
+    vt['name'] = dir_[:-1]
     with open(report_path, 'r') as f:
         data = json.load(f)
-    if len(data) <= 20:
+    
+    for ft in features:
+        arr = list()
         for step in data:
-            for ft in features:
-                vt.append(float(step[ft]))
-        while len(vt) < 20 * 20:
-            vt.append(0)
+            arr.append(step[ft])
+        arr = np.array(arr, dtype=np.float)
+        vt[ft + '_mean'] = np.mean(arr)
+        vt[ft + '_std'] = np.std(arr)
+        vt[ft + '_max'] = np.max(arr)
+        vt[ft + '_min'] = np.min(arr)
+    
+    if 'malware' in sys.argv[2]:
+        vt['label'] = 0
     else:
-        for step in data[:20]:
-            for ft in features:
-                vt.append(float(step[ft]))
-
-    vt.insert(0, dir_[:-1])
-    if sys.argv[2].startswith('list_malware'):
-        vt.append(0)
-    else:
-        vt.append(1)
+        vt['label'] = 1
     per.append(vt)
 
 header = ['name']
-for i in range(20):
-    header.extend([ft + str(i) for ft in features])
+for ft in features:
+    for att in ['_mean', '_std', '_max', '_min']:
+        header.append(ft + att)
 header.append('label')
-pd.DataFrame(per).to_csv(sys.argv[3], header=header, index=None)
+pd.DataFrame(per)[header].to_csv(sys.argv[3], index=None)
