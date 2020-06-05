@@ -137,19 +137,12 @@ for net in names:
             y_pred_train = np.hstack(
                 [y_pred_train_net, y_pred_train_sys, y_pred_train_per])
 
-            # Linear Regression
-            reg = LinearRegression()
-            reg.fit(y_pred_train, y_train_sys)
             y_pred_test = np.hstack([y_pred_net[:, 0].reshape(-1, 1),
                                      y_pred_sys[:, 0].reshape(-1, 1),
                                      y_pred_per[:, 0].reshape(-1, 1)])
-            y_pred_prob = reg.predict(y_pred_test)
-            y_pred = [y > 0.5 for y in y_pred_prob]
-            res_lin = 100 * metrics.accuracy_score(y_test_net, y_pred)
-            res['linear reg'] = '%.2f' % res_lin
 
             # Logisic Regression
-            reg = LogisticRegression()
+            reg = LogisticRegression(random_state=2020)
             reg.fit(y_pred_train, y_train_sys)
             y_pred = reg.predict(y_pred_test)
             res_log = 100 * metrics.accuracy_score(y_test_net, y_pred)
@@ -158,5 +151,5 @@ for net in names:
             df.append(res)
 
 header = ['ensemble', 'net', 'per', 'sys',
-          'vote', 'linear reg', 'logistic reg']
+          'vote', 'logistic reg']
 pd.DataFrame(df)[header].to_csv('result.csv')
