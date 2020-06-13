@@ -27,8 +27,10 @@ for dir_ in flist:
     
     for ft in features:
         arr = list()
-        for step in data:
+        for i, step in enumerate(data):
             arr.append(step[ft])
+            if i >= 20:
+                break
         arr = np.array(arr, dtype=np.float)
         vt[ft + '_mean'] = np.mean(arr)
         vt[ft + '_std'] = np.std(arr)

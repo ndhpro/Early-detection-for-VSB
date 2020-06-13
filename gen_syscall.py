@@ -14,19 +14,22 @@ with open(sys.argv[2], 'r') as f:
 for dir_ in flist:
     strace_list = list()
     report_path = full_report_path + dir_[:-1] + '/'
-    if os.path.exists(dst_path + dir_ + '.json'):
-        continue
+    # if os.path.exists(dst_path + dir_ + '.json'):
+    #     continue
     print(dir_[:-1])
     for _, _, files in os.walk(report_path):
         G = dict()
         G['edges'] = list()
         node = set()
+        files.sort()
         for file_name in files:
             if file_name.startswith('strace'):
                 with open(report_path + file_name, 'r') as f:
                     data = json.load(f)
                 for syscall in data:
                     node.add(syscall['name'])
+                if len(node) == 300:
+                    break
         node = list(node)
         for file_name in files:
             if file_name.startswith('strace'):
