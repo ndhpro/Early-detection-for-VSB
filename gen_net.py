@@ -2,6 +2,7 @@ import subprocess
 import sys
 import pandas as pd
 import os
+from scapy.all import *
 
 
 # python3 gen_net.py <report_dir> <file_list.csv> <net.csv>
@@ -10,10 +11,17 @@ with open(sys.argv[2], 'r') as f:
 for dir_ in flist:
     if os.path.exists('net/' + dir_[:-1] + '.csv'):
         continue
-    dir_path = sys.argv[1] + dir_[:-1]
-    p = subprocess.call('cd CICFlowMeter-4.0/bin/ && ./cfm ' +
-                        dir_path + ' ../../net/', shell=True)
-    os.rename('net/tcpdump.pcap_Flow.csv', 'net/' + dir_[:-1] + '.csv')
+    dir_path = sys.argv[1] + dir_[:-1] + '/tcpdump.pcap'
+    pcap = rdpcap(dir_path)
+    print(dir_path)
+    wrpcap('temp.pcap','')
+    for i, pkt in enumerate(pcap):
+        wrpcap('temp.pcap', pkt, append=True)
+        if i == 49:
+            break
+    p = subprocess.call('cd CICFlowMeter-4.0/bin/ && ./cfm ../../temp.pcap ../../net/', shell=True)
+    os.rename('net/temp.pcap_Flow.csv', 'net/' + dir_[:-1] + '.csv')
+    os.remove('temp.pcap')
 
 attributes = ['Sum ', 'Max ']
 features = ['Flow Duration', 'Tot Fwd Pkts', 'Tot Bwd Pkts',

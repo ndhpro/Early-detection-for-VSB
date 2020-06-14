@@ -1,5 +1,5 @@
 logs/
-net/
+net*/
 syscall/
 __pycache__/
 .vscode/
