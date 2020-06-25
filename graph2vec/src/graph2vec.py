@@ -81,7 +81,7 @@ def feature_extractor(path, rounds):
     """
     graph, features, name = dataset_reader(path)
     machine = WeisfeilerLehmanMachine(graph, features, rounds)
-    doc = TaggedDocument(words=machine.extracted_features, tags=["g_" + name])
+    doc = TaggedDocument(words=machine.extracted_features, tags=["g_" + name[:name.find('_')]])
     return doc
 
 def save_embedding(output_path, model, files, dimensions):
@@ -101,7 +101,7 @@ def save_embedding(output_path, model, files, dimensions):
             label = 1
         else:
             label = -1
-        out.append([identifier[:-1]] + list(model.docvecs["g_"+identifier]) + [label])
+        out.append([identifier[:-1]] + list(model.docvecs["g_"+identifier[:identifier.find('_')]]) + [label])
     column_names = ['name'] + ["#"+str(dim) for dim in range(dimensions)] + ['label']
     out = pd.DataFrame(out, columns=column_names)
     out.to_csv(output_path, index=None)
