@@ -101,9 +101,12 @@ X_train_sys, y_train_sys, X_test_sys, y_test_sys = prepare_data_syscall()
 
 names = ["SVM", "k-NN", "DecisionTree", "RandomForest"]
 df = list()
-for net in ['k-NN']:
+for net in ['DecisionTree']:
     for per in ['RandomForest']:
-        for sys in ['k-NN']:
+        for sys in ['SVM']:
+# for net in names:
+#     for per in names:
+#         for sys in names:
             res = dict()
             res['ensemble'] = net + ' + ' + per + ' + ' + sys
             clf_net, clf_per, clf_sys = load_model(net, per, sys)
@@ -168,4 +171,4 @@ for net in ['k-NN']:
 
 header = ['ensemble', 'net', 'per', 'sys',
           'vote', 'logistic reg']
-pd.DataFrame(df)[header].to_csv('result.csv')
+# pd.DataFrame(df)[header].to_csv('result.csv')

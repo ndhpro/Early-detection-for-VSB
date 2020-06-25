@@ -126,7 +126,7 @@ def main(args):
                     workers=args.workers,
                     epochs=args.epochs,
                     alpha=args.learning_rate)
-
+    model.save('model/doc2vec')
     save_embedding(args.output_path, model, graphs, args.dimensions)
 
 if __name__ == "__main__":
