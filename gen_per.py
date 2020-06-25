@@ -38,9 +38,9 @@ for dir_ in flist:
         vt[ft + '_min'] = np.min(arr)
     
     if 'malware' in sys.argv[2]:
-        vt['label'] = 0
-    else:
         vt['label'] = 1
+    else:
+        vt['label'] = -1
     per.append(vt)
 
 header = ['name']

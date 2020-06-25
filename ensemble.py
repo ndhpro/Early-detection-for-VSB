@@ -101,9 +101,9 @@ X_train_sys, y_train_sys, X_test_sys, y_test_sys = prepare_data_syscall()
 
 names = ["SVM", "k-NN", "DecisionTree", "RandomForest"]
 df = list()
-for net in names:
-    for per in names:
-        for sys in names:
+for net in ['k-NN']:
+    for per in ['RandomForest']:
+        for sys in ['k-NN']:
             res = dict()
             res['ensemble'] = net + ' + ' + per + ' + ' + sys
             clf_net, clf_per, clf_sys = load_model(net, per, sys)
@@ -124,8 +124,24 @@ for net in names:
             y_pred_sys = clf_sys.predict_proba(X_test_sys)
             y_pred = (y_pred_net + y_pred_sys + y_pred_per) / 3
             y_pred = np.argmax(y_pred, axis=1)
+            y_pred[y_pred==0] = -1
             res_vote = 100 * metrics.accuracy_score(y_test_net, y_pred)
             res['vote'] = '%.2f' % res_vote
+
+            y_true = y_test_net
+            with open('log/report_ensemble.txt', 'w') as f:
+                clf_report = metrics.classification_report(y_true, y_pred, digits=4)
+                cnf_matrix = metrics.confusion_matrix(y_true, y_pred)
+                TN, FP, FN, TP = cnf_matrix.ravel()
+                TPR = TP / (TP + FN)
+                FPR = FP / (FP + TN)
+                f.write('Accuracy: %0.4f\n' %
+                        metrics.accuracy_score(y_true, y_pred))
+                f.write('ROC AUC: %0.4f\n' %
+                        metrics.roc_auc_score(y_true, y_pred))
+                f.write('TPR: %0.4f\nFPR: %0.4f\n' % (TPR, FPR))
+                f.write('Classification report:\n' + str(clf_report) + '\n')
+                f.write('Confusion matrix:\n' + str(cnf_matrix) + '\n')
 
             # Prepare data
             y_pred_train_net = clf_net.predict_proba(

@@ -98,9 +98,9 @@ def save_embedding(output_path, model, files, dimensions):
     for f in files:
         identifier = f.strip(".json").split("/")[-1]
         if identifier[:-1] in mal:
-            label = 0
-        else:
             label = 1
+        else:
+            label = -1
         out.append([identifier[:-1]] + list(model.docvecs["g_"+identifier]) + [label])
     column_names = ['name'] + ["#"+str(dim) for dim in range(dimensions)] + ['label']
     out = pd.DataFrame(out, columns=column_names)

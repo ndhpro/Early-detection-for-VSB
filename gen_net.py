@@ -59,9 +59,9 @@ for dir_ in flist:
             data['Max ' + feature].append(0)
 
 if sys.argv[2].startswith('list_malware'):
-    data['label'] = 0
-else:
     data['label'] = 1
+else:
+    data['label'] = -1
 
 dp = pd.DataFrame.from_dict(data)
 dp.to_csv(sys.argv[3], index=None, columns=headers)

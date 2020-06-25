@@ -60,6 +60,9 @@ def prepare_data(args):
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
+    pickle.dump(sfm, open('model/per_fs.sav', 'wb'))
+    pickle.dump(scaler, open('model/per_norm.sav', 'wb'))
+
     return X_train, y_train, X_test, y_test
 
 
