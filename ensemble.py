@@ -101,9 +101,9 @@ X_train_sys, y_train_sys, X_test_sys, y_test_sys = prepare_data_syscall()
 
 names = ["SVM", "k-NN", "DecisionTree", "RandomForest"]
 df = list()
-for net in ['DecisionTree']:
+for net in ['k-NN']:
     for per in ['RandomForest']:
-        for sys in ['SVM']:
+        for sys in ['k-NN']:
 # for net in names:
 #     for per in names:
 #         for sys in names:
